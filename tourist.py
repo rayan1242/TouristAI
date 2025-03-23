@@ -1,6 +1,5 @@
 import google.generativeai as genai
 from langgraph.graph import StateGraph
-
 # Configure API key (Replace with your actual API key)
 genai.configure(api_key="")  # Add your API key
 
