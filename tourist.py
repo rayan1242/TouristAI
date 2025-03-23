@@ -2,7 +2,7 @@ import google.generativeai as genai
 from langgraph.graph import StateGraph
 
 # Configure API key (Replace with your actual API key)
-genai.configure(api_key="AIzaSyAjzByPsAmuxL8TVnTMb4UDgCvVUdhzRWw")  # Add your API key
+genai.configure(api_key="")  # Add your API key
 
 # Initialize Gemini LLM
 llm = genai.GenerativeModel("gemini-2.0-flash-001")
