@@ -1,39 +1,32 @@
-import os
-from langchain_google_genai import ChatGoogleGenerativeAI
+import google.generativeai as genai
+from langgraph.graph import StateGraph
 
-# Set Gemini API key
-os.environ["GOOGLE_API_KEY"] = "AIzaSyBrIDfUxkk-6y48lFzjAUYYh4LfIvXwHic"
+# Configure API key (Replace with your actual API key)
+genai.configure(api_key="AIzaSyAjzByPsAmuxL8TVnTMb4UDgCvVUdhzRWw")  # Add your API key
 
 # Initialize Gemini LLM
-llm = ChatGoogleGenerativeAI(model="gemini-pro")
-
-# Import required classes
-from langgraph.graph import StateGraph
-from langchain.schema import SystemMessage, HumanMessage
+llm = genai.GenerativeModel("gemini-2.0-flash-001")
 
 # Define agent functions
 def travel_recommender(state):
     """Recommends destinations based on user preferences."""
-    query = state.query
-    response = llm.invoke(f"Recommend travel destinations for {query}.")
-    state.recommendation = response.content
-    return state
+    query = state["query"]
+    response = llm.generate_content(f"Recommend travel destinations for {query}.")
+    return {"query": query, "recommendation": response.text}  # Return dictionary
 
 def budget_planner(state):
     """Suggests a budget based on recommendations."""
-    destination = state.recommendation
-    response = llm.invoke(f"Estimate a budget for a trip to {destination}.")
-    state.budget = response.content
-    return state
+    destination = state["recommendation"]
+    response = llm.generate_content(f"Estimate a budget for a trip to {destination}.")
+    return {**state, "budget": response.text}  # Keep previous state and add budget
 
 def itinerary_planner(state):
     """Creates an itinerary based on the budget."""
-    budget = state.budget
-    response = llm.invoke(f"Create a 5-day itinerary under {budget}.")
-    state.itinerary = response.content
-    return state
+    budget = state["budget"]
+    response = llm.generate_content(f"Create a 5-day itinerary under {budget}.")
+    return {**state, "itinerary": response.text}  # Add itinerary to the state
 
-# Define state structure
+# Define initial state
 class TravelState:
     def __init__(self, query):
         self.query = query
@@ -41,8 +34,16 @@ class TravelState:
         self.budget = None
         self.itinerary = None
 
+    def to_dict(self):
+        return {
+            "query": self.query,
+            "recommendation": self.recommendation,
+            "budget": self.budget,
+            "itinerary": self.itinerary
+        }
+
 # Create a new state graph
-workflow = StateGraph(lambda: TravelState(query))
+workflow = StateGraph(dict)  # Change state type to dictionary
 
 # Add nodes (agents)
 workflow.add_node("travel_recommender", travel_recommender)
@@ -59,7 +60,7 @@ app = workflow.compile()
 
 # Execute workflow with input query
 query = "a budget-friendly trip to Japan"
-result = app.invoke({"query": query})
+result = app.invoke({"query": query})  # Pass dictionary, not object
 
 # Print results
 print("Recommended Destination:", result["recommendation"])
